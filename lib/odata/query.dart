@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:built_collection/built_collection.dart';
 import 'package:http/http.dart' as http;
 import 'package:odata_dart/odata/query_fields.dart';
 import 'package:odata_dart/odata/query_options.dart';
@@ -40,7 +41,8 @@ class Query<T> extends QueryBase {
       value["Authorization"] = "Bearer $bearer";
     }
 
-    value["Accept-Charset"] = "UTF-8";
+    value["Accept-Charset"] = "utf-8";
+    value["Content-Type"] = "application/json;odata=verbose";
 
     return value;
   }
@@ -48,18 +50,24 @@ class Query<T> extends QueryBase {
   JSON queries() {
     final JSON value = {};
 
-    value["\$filter"] = _filter.join(", ");
-    value["\$expand"] = _expand.join(", ");
+    if (_filter.isNotEmpty) {
+      value["\$filter"] = _filter.join(", ");
+    }
+
+    if (_expand.isNotEmpty) {
+      value["\$expand"] = _expand.join(", ");
+    }
 
     if (_selectAll) {
       value["\$select"] = "*";
-    } else {
+    } else if (_select.isNotEmpty) {
       value["\$select"] = _select.join(", ");
     }
 
     return value;
   }
 
+  @override
   Future<ODataResponse<T>?> fetch() async {
     final http.Request req = http.Request(options.method, Uri.https(baseUrl, path, queries()));
 
@@ -68,10 +76,6 @@ class Query<T> extends QueryBase {
     headers.forEach((key, value) {
       req.headers[key] = value;
     });
-
-    req.headers["Accept-Charset"] = "utf-8";
-    req.headers["Accept"] = "application/json";
-    req.headers["Content-Type"] = "application/json;odata=verbose";
 
     http.StreamedResponse streamedResponse = await req.send();
     http.Response r = await http.Response.fromStream(streamedResponse);
@@ -82,11 +86,7 @@ class Query<T> extends QueryBase {
     try {
       json = jsonDecode(r.body);
 
-      if (options.convert != null) {
-        data = options.convert!(json);
-      } else {
-        throw "Convertor is absent (${req.url})";
-      }
+      data = options.convert(json);
     } catch (e) {
       data = null;
       try {
@@ -140,6 +140,63 @@ class CollectionQuery<T> extends Query {
   String? _search;
 
   CollectionQuery({required String baseUrl, required String path, String? cookie, String? bearer}) : super(baseUrl: baseUrl, path: path, bearer: bearer, cookie: cookie);
+
+  @override
+  JSON queries() {
+    final JSON value = super.queries();
+
+    if (_top != null) {
+      value["\$top"] = _top!.toString();
+    }
+
+    if (_skip != null) {
+      value["\$skip"] = _skip!.toString();
+    }
+
+    if (_count) {
+      value["\$count"] = "true";
+    }
+
+    return value;
+  }
+
+  @override
+  Future<ODataCollectionResponse<T>?> fetch() async {
+    final http.Request req = http.Request(options.method, Uri.https(baseUrl, path, queries()));
+
+    req.body = options.data.toString();
+
+    headers.forEach((key, value) {
+      req.headers[key] = value;
+    });
+
+    http.StreamedResponse streamedResponse = await req.send();
+    http.Response r = await http.Response.fromStream(streamedResponse);
+
+    late final BuiltList<T>? data;
+    late final JSON json;
+
+    try {
+      json = jsonDecode(r.body);
+
+      data = options.convert(json["value"]);
+    } catch (e) {
+      data = null;
+      try {
+        json = {};
+      } catch (e) {}
+    }
+
+    return ODataCollectionResponse<T>(
+      path: path,
+      response: r,
+      json: json,
+      collectionData: data,
+      count: json["@odata.count"],
+      statusCode: r.statusCode,
+      context: json["@odata.context"],
+    );
+  }
 
   CollectionQuery top(int i) {
     if (i.isNegative) {
