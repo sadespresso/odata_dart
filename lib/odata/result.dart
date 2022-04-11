@@ -22,10 +22,10 @@ class ODataResponse<T> {
   /// Response status code
   final int? statusCode;
 
-  /// Full path of the sent request
-  final String path;
+  /// Request Uri
+  final Uri uri;
 
-  const ODataResponse({required this.json, this.context, this.data, this.response, this.statusCode, required this.path});
+  const ODataResponse({required this.json, this.context, this.data, this.response, this.statusCode, required this.uri});
 }
 
 class ODataCollectionResponse<T> extends ODataResponse {
@@ -35,7 +35,7 @@ class ODataCollectionResponse<T> extends ODataResponse {
 
   const ODataCollectionResponse({
     required JSON json,
-    required String path,
+    required Uri uri,
     this.count,
     String? context,
     this.collectionData,
@@ -43,7 +43,7 @@ class ODataCollectionResponse<T> extends ODataResponse {
     int? statusCode,
   }) : super(
           json: json,
-          path: path,
+          uri: uri,
           context: context,
           statusCode: statusCode,
           data: null,

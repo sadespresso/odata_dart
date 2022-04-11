@@ -51,17 +51,17 @@ class Query<T> extends QueryBase {
     final JSON value = {};
 
     if (_filter.isNotEmpty) {
-      value["\$filter"] = _filter.join(", ");
+      value[r"$filter"] = _filter.join(", ");
     }
 
     if (_expand.isNotEmpty) {
-      value["\$expand"] = _expand.join(", ");
+      value[r"$expand"] = _expand.join(", ");
     }
 
     if (_selectAll) {
-      value["\$select"] = "*";
+      value[r"$select"] = "*";
     } else if (_select.isNotEmpty) {
-      value["\$select"] = _select.join(", ");
+      value[r"$select"] = _select.join(", ");
     }
 
     return value;
@@ -95,7 +95,7 @@ class Query<T> extends QueryBase {
     }
 
     return ODataResponse<T>(
-      path: path,
+      uri: req.url,
       response: r,
       json: json,
       statusCode: r.statusCode,
@@ -146,15 +146,15 @@ class CollectionQuery<T> extends Query {
     final JSON value = super.queries();
 
     if (_top != null) {
-      value["\$top"] = _top!.toString();
+      value[r"$top"] = _top!.toString();
     }
 
     if (_skip != null) {
-      value["\$skip"] = _skip!.toString();
+      value[r"$skip"] = _skip!.toString();
     }
 
     if (_count) {
-      value["\$count"] = "true";
+      value[r"$count"] = "true";
     }
 
     return value;
@@ -188,7 +188,7 @@ class CollectionQuery<T> extends Query {
     }
 
     return ODataCollectionResponse<T>(
-      path: path,
+      uri: req.url,
       response: r,
       json: json,
       collectionData: data,
@@ -198,9 +198,9 @@ class CollectionQuery<T> extends Query {
     );
   }
 
-  CollectionQuery top(int i) {
+  CollectionQuery<T> top(int i) {
     if (i.isNegative) {
-      throw Exception("\$top cannot accept negative value");
+      throw Exception(r"$top cannot accept negative value");
     }
 
     _top = i;
@@ -208,9 +208,9 @@ class CollectionQuery<T> extends Query {
     return this;
   }
 
-  CollectionQuery skip(int i) {
+  CollectionQuery<T> skip(int i) {
     if (i.isNegative) {
-      throw Exception("\$skip cannot accept negative value");
+      throw Exception(r"$skip cannot accept negative value");
     }
 
     _skip = i;
@@ -218,7 +218,7 @@ class CollectionQuery<T> extends Query {
     return this;
   }
 
-  CollectionQuery skipAndTop({required int skip, required int top}) {
+  CollectionQuery<T> skipAndTop({required int skip, required int top}) {
     if (skip.isNegative || top.isNegative) {
       throw Exception("Either \$skip and \$top cannot accept negative value");
     }
@@ -229,21 +229,41 @@ class CollectionQuery<T> extends Query {
     return this;
   }
 
-  CollectionQuery count() {
+  CollectionQuery<T> count() {
     _count = true;
 
     return this;
   }
 
-  CollectionQuery orderby(OrderyByField orderyByField) {
+  CollectionQuery<T> orderby(OrderyByField orderyByField) {
     _orderby = {..._orderby, orderyByField}.toList();
 
     return this;
   }
 
-  CollectionQuery search(String searchQuery) {
+  CollectionQuery<T> search(String searchQuery) {
     _search = searchQuery;
 
     return this;
+  }
+
+  @override
+  CollectionQuery<T> select(Iterable<String> fields) {
+    return super.select(fields) as CollectionQuery<T>;
+  }
+
+  @override
+  CollectionQuery<T> selectAll() {
+    return super.selectAll() as CollectionQuery<T>;
+  }
+
+  @override
+  CollectionQuery<T> filter(String expression) {
+    return super.filter(expression) as CollectionQuery<T>;
+  }
+
+  @override
+  CollectionQuery<T> expand(ExpandQueryField expandQueryField) {
+    return super.expand(expandQueryField) as CollectionQuery<T>;
   }
 }
