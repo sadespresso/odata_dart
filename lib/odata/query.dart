@@ -103,7 +103,22 @@ class Query<T> extends QueryBase {
     );
   }
 
-  Query<T> select(Iterable<String> fields) {
+  /// Please pass in comma seperated field names
+  ///
+  /// e.g.: "oid,name,code,createdAt"
+  Query<T> select(String fields) {
+    if (_selectAll) {
+      throw Exception("[OData Helper] Defining fields to select when 'selectAll' is enabled is useless");
+    }
+
+    if (!RegExp(r"^[a-zA-z_0-9,]*$").hasMatch(fields)) {
+      throw Exception("[OData Helper] select fields can only have letters, numbers and underscore");
+    }
+
+    return selectList(fields.split(","));
+  }
+
+  Query<T> selectList(Iterable<String> fields) {
     if (_selectAll) {
       throw Exception("[OData Helper] Defining fields to select when 'selectAll' is enabled is useless");
     }
@@ -248,8 +263,13 @@ class CollectionQuery<T> extends Query {
   }
 
   @override
-  CollectionQuery<T> select(Iterable<String> fields) {
+  CollectionQuery<T> select(String fields) {
     return super.select(fields) as CollectionQuery<T>;
+  }
+
+  @override
+  CollectionQuery<T> selectList(Iterable<String> fields) {
+    return super.selectList(fields) as CollectionQuery<T>;
   }
 
   @override
