@@ -33,18 +33,19 @@ class OData {
   Query<T> single<T>(String path, {QueryOptions<T> options = const QueryOptions(), bool tryUseAuth = true}) {
     return Query<T>(
       baseUrl: baseUrl,
-      options: options,
       path: path,
+      options: options,
       cookie: tryUseAuth ? _cookie : null,
       bearer: tryUseAuth ? _bearer : null,
     );
   }
 
   /// [tryUseAuth] will attach Authorization information to the Headers if possible
-  CollectionQuery<T> collection<T>(String path, {QueryOptions options = const QueryOptions(), bool tryUseAuth = true}) {
+  CollectionQuery<T> collection<T>(String path, {CollectionQueryOptions<T> options = const CollectionQueryOptions(), bool tryUseAuth = true}) {
     return CollectionQuery<T>(
       baseUrl: baseUrl,
       path: path,
+      options: options,
       cookie: tryUseAuth ? _cookie : null,
       bearer: tryUseAuth ? _bearer : null,
     );

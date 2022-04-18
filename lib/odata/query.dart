@@ -51,17 +51,17 @@ class Query<T> extends QueryBase {
     final JSON value = {};
 
     if (_filter.isNotEmpty) {
-      value[r"$filter"] = _filter.join(", ");
+      value[r"$filter"] = _filter.join(",");
     }
 
     if (_expand.isNotEmpty) {
-      value[r"$expand"] = _expand.join(", ");
+      value[r"$expand"] = _expand.join(",");
     }
 
     if (_selectAll) {
       value[r"$select"] = "*";
     } else if (_select.isNotEmpty) {
-      value[r"$select"] = _select.join(", ");
+      value[r"$select"] = _select.join(",");
     }
 
     return value;
@@ -71,7 +71,7 @@ class Query<T> extends QueryBase {
   Future<ODataResponse<T>?> fetch() async {
     final http.Request req = http.Request(options.method, Uri.https(baseUrl, path, queries()));
 
-    req.body = options.data.toString();
+    req.body = options.requestBody.toString();
 
     headers.forEach((key, value) {
       req.headers[key] = value;
@@ -91,13 +91,18 @@ class Query<T> extends QueryBase {
       data = null;
       try {
         json = {};
-      } catch (e) {}
+      } catch (e) {
+        //
+      }
     }
 
     return ODataResponse<T>(
       uri: req.url,
       response: r,
+      request: req,
+      query: this,
       json: json,
+      data: data,
       statusCode: r.statusCode,
       context: json["@odata.context"],
     );
@@ -154,7 +159,7 @@ class CollectionQuery<T> extends Query {
   List<OrderyByField> _orderby = [];
   String? _search;
 
-  CollectionQuery({required String baseUrl, required String path, String? cookie, String? bearer}) : super(baseUrl: baseUrl, path: path, bearer: bearer, cookie: cookie);
+  CollectionQuery({CollectionQueryOptions options = const CollectionQueryOptions(), required String baseUrl, required String path, String? cookie, String? bearer}) : super(baseUrl: baseUrl, path: path, bearer: bearer, cookie: cookie, options: options);
 
   @override
   JSON queries() {
@@ -168,6 +173,10 @@ class CollectionQuery<T> extends Query {
       value[r"$skip"] = _skip!.toString();
     }
 
+    if (_search != null) {
+      value[r"$search"] = _search!;
+    }
+
     if (_count) {
       value[r"$count"] = "true";
     }
@@ -179,7 +188,7 @@ class CollectionQuery<T> extends Query {
   Future<ODataCollectionResponse<T>?> fetch() async {
     final http.Request req = http.Request(options.method, Uri.https(baseUrl, path, queries()));
 
-    req.body = options.data.toString();
+    req.body = options.requestBody.toString();
 
     headers.forEach((key, value) {
       req.headers[key] = value;
@@ -189,7 +198,7 @@ class CollectionQuery<T> extends Query {
     http.Response r = await http.Response.fromStream(streamedResponse);
 
     late final BuiltList<T>? data;
-    late final JSON json;
+    JSON json = {};
 
     try {
       json = jsonDecode(r.body);
@@ -197,9 +206,6 @@ class CollectionQuery<T> extends Query {
       data = options.convert(json["value"]);
     } catch (e) {
       data = null;
-      try {
-        json = {};
-      } catch (e) {}
     }
 
     return ODataCollectionResponse<T>(
@@ -210,6 +216,8 @@ class CollectionQuery<T> extends Query {
       count: json["@odata.count"],
       statusCode: r.statusCode,
       context: json["@odata.context"],
+      query: this,
+      request: req,
     );
   }
 

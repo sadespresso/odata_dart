@@ -5,7 +5,7 @@ class QueryOptions<T> {
   final String method;
 
   /// Data to send to the server
-  final Object? data;
+  final Object? requestBody;
 
   final T Function(Map<String, dynamic>? json)? convertor;
 
@@ -22,7 +22,7 @@ class QueryOptions<T> {
   const QueryOptions({
     this.convertor,
     this.method = "GET",
-    this.data,
+    this.requestBody,
   });
 }
 
@@ -41,10 +41,10 @@ class CollectionQueryOptions<T> extends QueryOptions {
   const CollectionQueryOptions({
     T Function(Map<String, dynamic>? json)? convertor,
     String method = "GET",
-    Object? data,
+    Object? requestBody,
   }) : super(
           convertor: convertor,
-          data: data,
+          requestBody: requestBody,
           method: method,
         );
 }

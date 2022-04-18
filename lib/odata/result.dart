@@ -1,9 +1,9 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:http/http.dart';
+import 'package:odata_dart/odata/query.dart';
 
 typedef JSON = Map<String, dynamic>;
 
-// TODO include the fucking request/query in the result.
 class ODataResponse<T> {
   /// @odata.context
   final String? context;
@@ -25,7 +25,13 @@ class ODataResponse<T> {
   /// Request Uri
   final Uri uri;
 
-  const ODataResponse({required this.json, this.context, this.data, this.response, this.statusCode, required this.uri});
+  /// The request sent to the server
+  final Request request;
+
+  /// The query used to make the request
+  final Query query;
+
+  const ODataResponse({required this.uri, required this.request, required this.query, required this.json, this.context, this.data, this.response, this.statusCode});
 }
 
 class ODataCollectionResponse<T> extends ODataResponse {
@@ -36,16 +42,20 @@ class ODataCollectionResponse<T> extends ODataResponse {
   const ODataCollectionResponse({
     required JSON json,
     required Uri uri,
-    this.count,
+    required Request request,
+    required CollectionQuery query,
     String? context,
-    this.collectionData,
     Response? response,
     int? statusCode,
+    this.count,
+    this.collectionData,
   }) : super(
           json: json,
           uri: uri,
           context: context,
           statusCode: statusCode,
           data: null,
+          request: request,
+          query: query,
         );
 }
