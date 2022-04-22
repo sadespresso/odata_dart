@@ -1,7 +1,7 @@
 name: odata_dart
 description: Simple OData wrapper of dart programs
 version: 0.0.1
-# homepage: https://www.example.com
+homepage: https://github.com/theirontnt/odata_dart
 
 environment:
   sdk: ">=2.16.1 <3.0.0"
